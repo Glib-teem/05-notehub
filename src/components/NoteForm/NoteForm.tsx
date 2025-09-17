@@ -1,9 +1,10 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import type { CreateNoteData, NoteTag } from '../../types/note';
+import type { CreateNoteData } from '../../types/note';
 import css from './NoteForm.module.css';
 
 interface NoteFormProps {
+  initialValues?: CreateNoteData;
   onSubmit: (data: CreateNoteData) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -16,23 +17,25 @@ const noteValidationSchema = Yup.object({
     .required('Title is required'),
   content: Yup.string().max(500, 'Content must be no more than 500 characters'),
   tag: Yup.string()
-    .oneOf(
-      ['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'],
-      'Please select a valid tag'
-    )
+    .oneOf(['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'])
     .required('Tag is required'),
 });
 
-const initialValues: CreateNoteData = {
-  title: '',
-  content: '',
-  tag: 'Todo' as NoteTag,
-};
+const NoteForm = ({
+  initialValues,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+}: NoteFormProps) => {
+  const values: CreateNoteData = initialValues || {
+    title: '',
+    content: '',
+    tag: 'Todo',
+  };
 
-const NoteForm = ({ onSubmit, onCancel, isSubmitting }: NoteFormProps) => {
   return (
     <Formik
-      initialValues={initialValues}
+      initialValues={values}
       validationSchema={noteValidationSchema}
       onSubmit={onSubmit}
     >
@@ -44,8 +47,6 @@ const NoteForm = ({ onSubmit, onCancel, isSubmitting }: NoteFormProps) => {
             type="text"
             name="title"
             className={css.input}
-            placeholder="Enter note title"
-            autoComplete="off"
           />
           <ErrorMessage
             name="title"
@@ -60,10 +61,8 @@ const NoteForm = ({ onSubmit, onCancel, isSubmitting }: NoteFormProps) => {
             as="textarea"
             id="content"
             name="content"
-            rows={8}
+            rows={6}
             className={css.textarea}
-            placeholder="Enter note content"
-            autoComplete="off"
           />
           <ErrorMessage
             name="content"
@@ -107,7 +106,13 @@ const NoteForm = ({ onSubmit, onCancel, isSubmitting }: NoteFormProps) => {
             className={css.submitButton}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Create note'}
+            {isSubmitting
+              ? initialValues
+                ? 'Updating...'
+                : 'Creating...'
+              : initialValues
+              ? 'Update note'
+              : 'Create note'}
           </button>
         </div>
       </Form>

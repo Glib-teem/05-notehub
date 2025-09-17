@@ -4,10 +4,11 @@ import css from './NoteList.module.css';
 interface NoteListProps {
   notes: Note[];
   onDelete: (noteId: string) => void;
+  onEdit: (note: Note) => void;
   isDeleting?: string | null;
 }
 
-const NoteList = ({ notes, onDelete, isDeleting }: NoteListProps) => {
+const NoteList = ({ notes, onDelete, onEdit, isDeleting }: NoteListProps) => {
   if (notes.length === 0) {
     return (
       <div className={css.emptyState}>
@@ -28,13 +29,21 @@ const NoteList = ({ notes, onDelete, isDeleting }: NoteListProps) => {
           <p className={css.content}>{note.content}</p>
           <div className={css.footer}>
             <span className={css.tag}>{note.tag}</span>
-            <button
-              className={css.button}
-              onClick={() => onDelete(note.id)}
-              disabled={isDeleting === note.id}
-            >
-              {isDeleting === note.id ? 'Deleting...' : 'Delete'}
-            </button>
+            <div className={css.buttonGroup}>
+              <button
+                className={css.editButton}
+                onClick={() => onEdit(note)}
+              >
+                Edit
+              </button>
+              <button
+                className={css.button}
+                onClick={() => onDelete(note.id)}
+                disabled={isDeleting === note.id}
+              >
+                {isDeleting === note.id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
         </li>
       ))}

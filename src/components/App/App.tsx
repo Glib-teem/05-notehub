@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
-import type { CreateNoteData, Note } from '../../types/note';
-import { fetchNotes, createNote, deleteNote } from '../../services/noteService';
+import type { Note, CreateNoteData, UpdateNoteData } from '../../types/note';
+import {
+  fetchNotes,
+  createNote,
+  updateNote,
+  deleteNote,
+} from '../../services/noteService';
 import NoteList from '../NoteList/NoteList';
 import SearchBox from '../SearchBox/SearchBox';
 import Pagination from '../Pagination/Pagination';
@@ -18,13 +23,13 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 900);
-
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
   const queryClient = useQueryClient();
 
-  // Fetch notes query
+  // Fetch notes
   const {
     data: notesData,
     isLoading,
@@ -40,7 +45,7 @@ const App = () => {
       }),
   });
 
-  // Create note mutation
+  // Create note
   const createNoteMutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
@@ -50,7 +55,17 @@ const App = () => {
     },
   });
 
-  // Delete note mutation
+  // Update note
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateNoteData }) =>
+      updateNote(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      setEditingNote(null);
+    },
+  });
+
+  // Delete note
   const deleteNoteMutation = useMutation({
     mutationFn: deleteNote,
     onSuccess: () => {
@@ -75,19 +90,37 @@ const App = () => {
     await createNoteMutation.mutateAsync(noteData);
   };
 
+  const handleUpdateNote = async (noteData: UpdateNoteData) => {
+    if (!editingNote) return;
+    await updateNoteMutation.mutateAsync({
+      id: editingNote.id,
+      data: noteData,
+    });
+  };
+
   const handleDeleteNote = (noteId: string) => {
     setDeletingNoteId(noteId);
     deleteNoteMutation.mutate(noteId);
   };
 
-  const handleModalOpen = () => setIsModalOpen(true);
-  const handleModalClose = () => setIsModalOpen(false);
+  const openCreateModal = () => {
+    setEditingNote(null);
+    setIsModalOpen(true);
+  };
 
-  if (isLoading) {
-    return <Loader message="Loading notes..." />;
-  }
+  const openEditModal = (note: Note) => {
+    setEditingNote(note);
+    setIsModalOpen(true);
+  };
 
-  if (error) {
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingNote(null);
+  };
+
+  if (isLoading) return <Loader message="Loading notes..." />;
+
+  if (error)
     return (
       <ErrorMessage
         message={
@@ -96,7 +129,6 @@ const App = () => {
         onRetry={refetch}
       />
     );
-  }
 
   const notes: Note[] = notesData?.notes || [];
   const totalPages: number = notesData?.totalPages || 0;
@@ -120,7 +152,7 @@ const App = () => {
 
         <button
           className={css.button}
-          onClick={handleModalOpen}
+          onClick={openCreateModal}
         >
           Create note +
         </button>
@@ -130,6 +162,7 @@ const App = () => {
         <NoteList
           notes={notes}
           onDelete={handleDeleteNote}
+          onEdit={openEditModal}
           isDeleting={deletingNoteId}
         />
       ) : (
@@ -145,12 +178,15 @@ const App = () => {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={handleModalClose}
+        onClose={closeModal}
       >
         <NoteForm
-          onSubmit={handleCreateNote}
-          onCancel={handleModalClose}
-          isSubmitting={createNoteMutation.isPending}
+          initialValues={editingNote || undefined}
+          onSubmit={editingNote ? handleUpdateNote : handleCreateNote}
+          onCancel={closeModal}
+          isSubmitting={
+            createNoteMutation.isPending || updateNoteMutation.isPending
+          }
         />
       </Modal>
     </div>

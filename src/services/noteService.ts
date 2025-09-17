@@ -39,6 +39,12 @@ export interface DeleteNoteResponse {
   note: Note;
 }
 
+export interface UpdateNoteData {
+  title?: string;
+  content?: string;
+  tag?: NoteTag;
+}
+
 export const fetchNotes = async (
   params: FetchNotesParams = {}
 ): Promise<FetchNotesResponse> => {
@@ -62,7 +68,17 @@ export const fetchNotes = async (
 
 export const createNote = async (noteData: CreateNoteData): Promise<Note> => {
   const { data } = await apiClient.post<CreateNoteResponse>('/notes', noteData);
+  return data.note;
+};
 
+export const updateNote = async (
+  noteId: string,
+  noteData: UpdateNoteData
+): Promise<Note> => {
+  const { data } = await apiClient.put<CreateNoteResponse>(
+    `/notes/${noteId}`,
+    noteData
+  );
   return data.note;
 };
 
@@ -70,6 +86,5 @@ export const deleteNote = async (noteId: string): Promise<Note> => {
   const { data } = await apiClient.delete<DeleteNoteResponse>(
     `/notes/${noteId}`
   );
-
   return data.note;
 };

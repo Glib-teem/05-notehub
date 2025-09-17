@@ -8,11 +8,10 @@
 .app {
   width: 90%;
   max-width: 1280px;
-  margin: 0 auto; /* Об'єднано: '0px auto' та '0 auto' */
+  margin: 0 auto;
   padding: 0 16px 16px;
 }
 
-/* Стилі для логотипу */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -28,7 +27,6 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-/* Анімація для логотипу */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -49,7 +47,6 @@
   padding: 2em;
 }
 
-/* Стилі для тексту "read-the-docs" */
 .read-the-docs {
   color: #888;
 }
