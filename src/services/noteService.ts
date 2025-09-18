@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Note, NoteTag } from '../types/note';
+import type { Note, NoteTag, UpdateNoteData } from '../types/note';
 
 const API_BASE_URL = 'https://notehub-public.goit.study/api';
 
@@ -19,9 +19,6 @@ export interface FetchNotesParams {
 
 export interface FetchNotesResponse {
   notes: Note[];
-  total: number;
-  page: number;
-  perPage: number;
   totalPages: number;
 }
 
@@ -37,12 +34,6 @@ export interface CreateNoteResponse {
 
 export interface DeleteNoteResponse {
   note: Note;
-}
-
-export interface UpdateNoteData {
-  title?: string;
-  content?: string;
-  tag?: NoteTag;
 }
 
 export const fetchNotes = async (
@@ -70,6 +61,8 @@ export const createNote = async (noteData: CreateNoteData): Promise<Note> => {
   const { data } = await apiClient.post<CreateNoteResponse>('/notes', noteData);
   return data.note;
 };
+
+// Функція updateNote залишив, оскільки вона використовується для редагування нотаток у компоненті App.tsx
 
 export const updateNote = async (
   noteId: string,

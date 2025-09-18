@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Додав імпорт `keepPreviousData` для плавної пагінації.
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+
 import { useDebounce } from 'use-debounce';
-import type { Note, CreateNoteData, UpdateNoteData } from '../../types/note';
-import {
-  fetchNotes,
-  createNote,
-  updateNote,
-  deleteNote,
-} from '../../services/noteService';
+import type { Note } from '../../types/note';
+import { fetchNotes } from '../../services/noteService';
 import NoteList from '../NoteList/NoteList';
 import SearchBox from '../SearchBox/SearchBox';
 import Pagination from '../Pagination/Pagination';
@@ -24,10 +22,8 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
-  const queryClient = useQueryClient();
 
   // Fetch notes
   const {
@@ -43,39 +39,11 @@ const App = () => {
         perPage: NOTES_PER_PAGE,
         search: debouncedSearchQuery,
       }),
+    // Додав `placeholderData` для уникнення "мерехтіння" при зміні сторінки.
+    placeholderData: keepPreviousData,
   });
 
-  // Create note
-  const createNoteMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      setIsModalOpen(false);
-      setCurrentPage(1);
-    },
-  });
-
-  // Update note
-  const updateNoteMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateNoteData }) =>
-      updateNote(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      setEditingNote(null);
-    },
-  });
-
-  // Delete note
-  const deleteNoteMutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      setDeletingNoteId(null);
-    },
-    onError: () => {
-      setDeletingNoteId(null);
-    },
-  });
+  // Логіка мутацій (create, update, delete) видалена і тепер інкапсульована в компонентах NoteForm та NoteList.
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -84,23 +52,6 @@ const App = () => {
 
   const handlePageChange = ({ selected }: { selected: number }) => {
     setCurrentPage(selected + 1);
-  };
-
-  const handleCreateNote = async (noteData: CreateNoteData) => {
-    await createNoteMutation.mutateAsync(noteData);
-  };
-
-  const handleUpdateNote = async (noteData: UpdateNoteData) => {
-    if (!editingNote) return;
-    await updateNoteMutation.mutateAsync({
-      id: editingNote.id,
-      data: noteData,
-    });
-  };
-
-  const handleDeleteNote = (noteId: string) => {
-    setDeletingNoteId(noteId);
-    deleteNoteMutation.mutate(noteId);
   };
 
   const openCreateModal = () => {
@@ -118,7 +69,7 @@ const App = () => {
     setEditingNote(null);
   };
 
-  if (isLoading) return <Loader message="Loading notes..." />;
+  if (isLoading && !notesData) return <Loader message="Loading notes..." />;
 
   if (error)
     return (
@@ -161,9 +112,7 @@ const App = () => {
       {notes.length > 0 ? (
         <NoteList
           notes={notes}
-          onDelete={handleDeleteNote}
           onEdit={openEditModal}
-          isDeleting={deletingNoteId}
         />
       ) : (
         <div className={css.emptyState}>
@@ -181,12 +130,8 @@ const App = () => {
         onClose={closeModal}
       >
         <NoteForm
-          initialValues={editingNote || undefined}
-          onSubmit={editingNote ? handleUpdateNote : handleCreateNote}
-          onCancel={closeModal}
-          isSubmitting={
-            createNoteMutation.isPending || updateNoteMutation.isPending
-          }
+          noteToEdit={editingNote || undefined}
+          onClose={closeModal}
         />
       </Modal>
     </div>

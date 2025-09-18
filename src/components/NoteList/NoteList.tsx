@@ -1,14 +1,30 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteNote } from '../../services/noteService';
 import type { Note } from '../../types/note';
 import css from './NoteList.module.css';
 
 interface NoteListProps {
   notes: Note[];
-  onDelete: (noteId: string) => void;
   onEdit: (note: Note) => void;
-  isDeleting?: string | null;
 }
 
-const NoteList = ({ notes, onDelete, onEdit, isDeleting }: NoteListProps) => {
+const NoteList = ({ notes, onEdit }: NoteListProps) => {
+  // Ініціалізую queryClient для інвалідації кешу.
+  const queryClient = useQueryClient();
+
+  // Створюю мутацію для видалення нотатки.
+  const deleteNoteMutation = useMutation({
+    mutationFn: deleteNote,
+    onSuccess: () => {
+      // Після успішного видалення, інвалідую запити 'notes' щоб TanStack Query автоматично оновив дані.
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+
+  const handleDelete = (noteId: string) => {
+    deleteNoteMutation.mutate(noteId);
+  };
+
   if (notes.length === 0) {
     return (
       <div className={css.emptyState}>
@@ -38,10 +54,17 @@ const NoteList = ({ notes, onDelete, onEdit, isDeleting }: NoteListProps) => {
               </button>
               <button
                 className={css.button}
-                onClick={() => onDelete(note.id)}
-                disabled={isDeleting === note.id}
+                onClick={() => handleDelete(note.id)}
+                // Стан завантаження беру з мутації, перевіряючи, що саме ця нотатка видаляється.
+                disabled={
+                  deleteNoteMutation.isPending &&
+                  deleteNoteMutation.variables === note.id
+                }
               >
-                {isDeleting === note.id ? 'Deleting...' : 'Delete'}
+                {deleteNoteMutation.isPending &&
+                deleteNoteMutation.variables === note.id
+                  ? 'Deleting...'
+                  : 'Delete'}
               </button>
             </div>
           </div>
