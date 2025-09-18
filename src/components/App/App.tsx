@@ -1,8 +1,5 @@
 import { useState } from 'react';
-
-// Додав імпорт `keepPreviousData` для плавної пагінації.
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-
 import { useDebounce } from 'use-debounce';
 import type { Note } from '../../types/note';
 import { fetchNotes } from '../../services/noteService';
@@ -21,11 +18,9 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
 
   const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
 
-  // Fetch notes
   const {
     data: notesData,
     isLoading,
@@ -39,11 +34,8 @@ const App = () => {
         perPage: NOTES_PER_PAGE,
         search: debouncedSearchQuery,
       }),
-    // Додав `placeholderData` для уникнення "мерехтіння" при зміні сторінки.
     placeholderData: keepPreviousData,
   });
-
-  // Логіка мутацій (create, update, delete) видалена і тепер інкапсульована в компонентах NoteForm та NoteList.
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -55,18 +47,11 @@ const App = () => {
   };
 
   const openCreateModal = () => {
-    setEditingNote(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (note: Note) => {
-    setEditingNote(note);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setEditingNote(null);
   };
 
   if (isLoading && !notesData) return <Loader message="Loading notes..." />;
@@ -110,10 +95,7 @@ const App = () => {
       </header>
 
       {notes.length > 0 ? (
-        <NoteList
-          notes={notes}
-          onEdit={openEditModal}
-        />
+        <NoteList notes={notes} />
       ) : (
         <div className={css.emptyState}>
           <h2>No notes found</h2>
@@ -129,10 +111,7 @@ const App = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
       >
-        <NoteForm
-          noteToEdit={editingNote || undefined}
-          onClose={closeModal}
-        />
+        <NoteForm onClose={closeModal} />
       </Modal>
     </div>
   );

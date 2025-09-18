@@ -1,5 +1,6 @@
 import axios from 'axios';
-import type { Note, NoteTag, UpdateNoteData } from '../types/note';
+// Видалив імпорт UpdateNoteData.
+import type { Note, NoteTag } from '../types/note';
 
 const API_BASE_URL = 'https://notehub-public.goit.study/api';
 
@@ -62,18 +63,7 @@ export const createNote = async (noteData: CreateNoteData): Promise<Note> => {
   return data.note;
 };
 
-// Функція updateNote залишив, оскільки вона використовується для редагування нотаток у компоненті App.tsx
-
-export const updateNote = async (
-  noteId: string,
-  noteData: UpdateNoteData
-): Promise<Note> => {
-  const { data } = await apiClient.put<CreateNoteResponse>(
-    `/notes/${noteId}`,
-    noteData
-  );
-  return data.note;
-};
+// Функція updateNote видалена
 
 export const deleteNote = async (noteId: string): Promise<Note> => {
   const { data } = await apiClient.delete<DeleteNoteResponse>(

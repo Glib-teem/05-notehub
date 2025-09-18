@@ -5,18 +5,14 @@ import css from './NoteList.module.css';
 
 interface NoteListProps {
   notes: Note[];
-  onEdit: (note: Note) => void;
 }
 
-const NoteList = ({ notes, onEdit }: NoteListProps) => {
-  // Ініціалізую queryClient для інвалідації кешу.
+const NoteList = ({ notes }: NoteListProps) => {
   const queryClient = useQueryClient();
 
-  // Створюю мутацію для видалення нотатки.
   const deleteNoteMutation = useMutation({
     mutationFn: deleteNote,
     onSuccess: () => {
-      // Після успішного видалення, інвалідую запити 'notes' щоб TanStack Query автоматично оновив дані.
       queryClient.invalidateQueries({ queryKey: ['notes'] });
     },
   });
@@ -47,15 +43,8 @@ const NoteList = ({ notes, onEdit }: NoteListProps) => {
             <span className={css.tag}>{note.tag}</span>
             <div className={css.buttonGroup}>
               <button
-                className={css.editButton}
-                onClick={() => onEdit(note)}
-              >
-                Edit
-              </button>
-              <button
                 className={css.button}
                 onClick={() => handleDelete(note.id)}
-                // Стан завантаження беру з мутації, перевіряючи, що саме ця нотатка видаляється.
                 disabled={
                   deleteNoteMutation.isPending &&
                   deleteNoteMutation.variables === note.id

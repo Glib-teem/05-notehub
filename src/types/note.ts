@@ -15,8 +15,4 @@ export interface CreateNoteData {
   tag: NoteTag;
 }
 
-export interface UpdateNoteData {
-  title?: string;
-  content?: string;
-  tag?: NoteTag;
-}
+// Гарний Інтерфейс UpdateNoteData видалено O_o

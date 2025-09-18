@@ -1,15 +1,13 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createNote, updateNote } from '../../services/noteService';
-import type { Note, CreateNoteData, UpdateNoteData } from '../../types/note';
+
+import { createNote } from '../../services/noteService';
+
+import type { CreateNoteData } from '../../types/note';
 import css from './NoteForm.module.css';
 
 interface NoteFormProps {
-  // Проп для передачі нотатки, що редагується.
-  noteToEdit?: Note;
-  // Проп для закриття модального вікна.
   onClose: () => void;
 }
 
@@ -24,52 +22,36 @@ const noteValidationSchema = Yup.object({
     .required('Tag is required'),
 });
 
-const NoteForm = ({ noteToEdit, onClose }: NoteFormProps) => {
-  const queryClient = useQueryClient();
-  const isEditing = !!noteToEdit;
+// Початкові значення тепер статичні для нової нотатки.
+const initialValues: CreateNoteData = {
+  title: '',
+  content: '',
+  tag: 'Todo',
+};
 
-  // Мутація для створення нотатки.
+const NoteForm = ({ onClose }: NoteFormProps) => {
+  const queryClient = useQueryClient();
+
   const createNoteMutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      onClose(); // Закриваю модалку після успішного створення.
-    },
-  });
-
-  // Мутація для оновлення нотатки.
-  const updateNoteMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateNoteData }) =>
-      updateNote(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      onClose(); // Закриваю модалку після успішного оновлення.
+      onClose();
     },
   });
 
   const handleSubmit = (values: CreateNoteData) => {
-    if (isEditing) {
-      updateNoteMutation.mutate({ id: noteToEdit.id, data: values });
-    } else {
-      createNoteMutation.mutate(values);
-    }
+    // Обробник тепер викликає тільки створення нотатки.
+    createNoteMutation.mutate(values);
   };
 
-  const initialValues: CreateNoteData = {
-    title: noteToEdit?.title || '',
-    content: noteToEdit?.content || '',
-    tag: noteToEdit?.tag || 'Todo',
-  };
-
-  const isSubmitting =
-    createNoteMutation.isPending || updateNoteMutation.isPending;
+  const isSubmitting = createNoteMutation.isPending;
 
   return (
     <Formik
       initialValues={initialValues}
       validationSchema={noteValidationSchema}
       onSubmit={handleSubmit}
-      enableReinitialize
     >
       <Form className={css.form}>
         <div className={css.formGroup}>
@@ -138,13 +120,7 @@ const NoteForm = ({ noteToEdit, onClose }: NoteFormProps) => {
             className={css.submitButton}
             disabled={isSubmitting}
           >
-            {isSubmitting
-              ? isEditing
-                ? 'Updating...'
-                : 'Creating...'
-              : isEditing
-              ? 'Update note'
-              : 'Create note'}
+            {isSubmitting ? 'Creating...' : 'Create note'}
           </button>
         </div>
       </Form>
